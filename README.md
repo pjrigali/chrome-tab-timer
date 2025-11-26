@@ -31,10 +31,10 @@
 
 1. **Download or clone the repository**  
    Ensure you have all the files:  
-  * manifest.json
-  * background.js
-  * popup.html
-  * popup.js
+  - manifest.json
+  - background.js
+  - popup.html
+  - popup.js
 
 
 2. **Open Chrome extensions page**  
