@@ -31,10 +31,10 @@
 
 1. **Download or clone the repository**  
    Ensure you have all the files:  
-* manifest.json
-* background.js
-* popup.html
-* popup.js
+  * manifest.json
+  * background.js
+  * popup.html
+  * popup.js
 
 
 2. **Open Chrome extensions page**  
@@ -44,33 +44,33 @@ Navigate to: `chrome://extensions/`
 Toggle the switch in the top-right corner.
 
 4. **Load the extension**  
-- Click **Load unpacked**  
-- Select the folder containing the extension files.
+  - Click **Load unpacked**  
+  - Select the folder containing the extension files.
 
 5. **Pin the extension (optional)**  
-- Click the puzzle icon in the toolbar  
-- Pin “Tab Time Tracker” for easy access.
+  - Click the puzzle icon in the toolbar  
+  - Pin “Tab Time Tracker” for easy access.
 
 6. **Use the extension**  
-- Open multiple tabs.  
-- The badge will display time per tab.  
-- Click the extension icon to open the popup for a detailed list.
+  - Open multiple tabs.  
+  - The badge will display time per tab.  
+  - Click the extension icon to open the popup for a detailed list.
 
 ---
 
 ## How it Works
 
 - **Background Script (`background.js`)**  
-- Tracks tab creation and removal.  
-- Updates elapsed time for all tabs every second.  
-- Updates tab badge dynamically in MM:SS or H:MM format.  
-- Handles popup requests and focusing tabs.  
+  - Tracks tab creation and removal.  
+  - Updates elapsed time for all tabs every second.  
+  - Updates tab badge dynamically in MM:SS or H:MM format.  
+  - Handles popup requests and focusing tabs.  
 
 - **Popup (`popup.html` + `popup.js`)**  
-- Displays all tabs with domain and full HH:MM:SS timer.  
-- Clickable domains focus the corresponding tab.  
-- Sorted by createdAt time.  
-- Stylish card design for easy readability.  
+  - Displays all tabs with domain and full HH:MM:SS timer.  
+  - Clickable domains focus the corresponding tab.  
+  - Sorted by createdAt time.  
+  - Stylish card design for easy readability.  
 
 ---
 
