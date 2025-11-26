@@ -69,7 +69,7 @@ Toggle the switch in the top-right corner.
 - **Popup (`popup.html` + `popup.js`)**  
 - Displays all tabs with domain and full HH:MM:SS timer.  
 - Clickable domains focus the corresponding tab.  
-- Sorted by longest open time for quick overview.  
+- Sorted by createdAt time.  
 - Stylish card design for easy readability.  
 
 ---
@@ -85,8 +85,8 @@ Toggle the switch in the top-right corner.
 
 ## Future Enhancements
 
-- Add a **reset timer button** for each tab.  
-- Option to **persist timers across sessions**.  
+- ~~Add a **reset timer button** for each tab~~.  
+- ~~Option to **persist timers across sessions**~~.  
 - Customize **badge colors or popup theme**.  
 - Export tab times to a file or clipboard.  
 
