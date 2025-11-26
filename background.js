@@ -1,22 +1,16 @@
 let tabTimes = {};
 
-// When a tab is created
+// --- Tab creation & removal ---
 chrome.tabs.onCreated.addListener((tab) => {
-  tabTimes[tab.id] = {
-    startTime: Date.now(),
-    seconds: 0
-  };
+  tabTimes[tab.id] = { startTime: Date.now(), seconds: 0, createdAt: Date.now() };
   updateBadge(tab.id);
 });
 
-// When a tab is removed
 chrome.tabs.onRemoved.addListener((tabId) => {
-  if (tabTimes[tabId]) {
-    delete tabTimes[tabId];
-  }
+  if (tabTimes[tabId]) delete tabTimes[tabId];
 });
 
-// Update time every second
+// --- Update time & badge every second ---
 setInterval(() => {
   const now = Date.now();
   for (let tabId in tabTimes) {
@@ -26,62 +20,89 @@ setInterval(() => {
   }
 }, 1000);
 
-// Update the badge text for a tab
+// --- Save timers to storage every 5 seconds ---
+setInterval(() => {
+  chrome.storage.local.set({ tabTimes });
+}, 5000);
+
+// --- Update badge ---
 function updateBadge(tabId) {
   chrome.tabs.get(tabId, (tab) => {
-    if (chrome.runtime.lastError) return; // tab may be closed
-    let totalSeconds = tabTimes[tabId] ? tabTimes[tabId].seconds : 0;
+    if (chrome.runtime.lastError) return;
+    let totalSeconds = tabTimes[tabId]?.seconds || 0;
     let hours = Math.floor(totalSeconds / 3600);
     let minutes = Math.floor((totalSeconds % 3600) / 60);
     let seconds = totalSeconds % 60;
 
-    let badgeText = '';
-    if (hours > 0) {
-      // Show H:MM if over 1 hour
-      badgeText = `${hours}:${minutes.toString().padStart(2, '0')}`;
-    } else {
-      // Show MM:SS if less than 1 hour
-      badgeText = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-    }
+    let badgeText = hours > 0
+      ? `${hours}:${minutes.toString().padStart(2,'0')}` // H:MM
+      : `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`; // MM:SS
 
+    let color = totalSeconds >= 3600 ? '#f44336' : '#4CAF50';
     chrome.action.setBadgeText({ text: badgeText, tabId });
-    chrome.action.setBadgeBackgroundColor({ color: '#4CAF50', tabId });
+    chrome.action.setBadgeBackgroundColor({ color, tabId });
   });
 }
 
-// Provide data to popup (full HH:MM:SS with domain)
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'getTabTimes') {
-    let formattedTimes = {};
-    chrome.tabs.query({}, (tabs) => {
-      for (let tab of tabs) {
-        let tabData = tabTimes[tab.id];
-        if (tabData) {
-          let totalSeconds = tabData.seconds;
-          let hours = Math.floor(totalSeconds / 3600);
-          let minutes = Math.floor((totalSeconds % 3600) / 60);
-          let seconds = totalSeconds % 60;
-          let timeStr = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-          let domain = '';
-          try { domain = new URL(tab.url).hostname; } catch(e){ domain = tab.title || 'unknown'; }
-          formattedTimes[domain] = {
-            time: timeStr,
-            tabId: tab.id,
-            windowId: tab.windowId
-          };
-        }
+// --- Load timers from storage on startup ---
+chrome.runtime.onStartup.addListener(() => {
+  chrome.storage.local.get('tabTimes', (result) => {
+    if (result.tabTimes) {
+      tabTimes = result.tabTimes;
+      for (let id in tabTimes) {
+        tabTimes[id].startTime = Number(tabTimes[id].startTime);
+        updateBadge(Number(id));
       }
-      sendResponse(formattedTimes);
-    });
-    return true;
+    }
+  });
+});
+
+// --- Unified message listener ---
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  switch (request.action) {
+    case 'getTabTimes':
+      let formattedTimes = {};
+      chrome.tabs.query({}, (tabs) => {
+        for (let tab of tabs) {
+          let data = tabTimes[tab.id];
+          if (data) {
+            let totalSeconds = data.seconds;
+            let hours = Math.floor(totalSeconds / 3600);
+            let minutes = Math.floor((totalSeconds % 3600) / 60);
+            let seconds = totalSeconds % 60;
+            let timeStr = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+
+            let domain = '';
+            try { domain = new URL(tab.url).hostname; } 
+            catch(e){ domain = tab.title || 'unknown'; }
+
+            formattedTimes[domain] = { time: timeStr, tabId: tab.id, windowId: tab.windowId };
+          }
+        }
+        sendResponse(formattedTimes);
+      });
+      return true; // async response
+
+    case 'focusTab':
+      if (request.tabId !== undefined) {
+        chrome.tabs.update(request.tabId, { active: true });
+        chrome.windows.update(request.windowId, { focused: true });
+        sendResponse({ success: true });
+      }
+      break;
+
+    case 'resetTimer':
+      if (tabTimes[request.tabId]) {
+        tabTimes[request.tabId].startTime = Date.now();
+        tabTimes[request.tabId].seconds = 0;
+        updateBadge(request.tabId);
+        sendResponse({ success: true });
+      }
+      break;
+
+    default:
+      break;
   }
 });
 
-// Focus a specific tab when requested from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'focusTab' && request.tabId !== undefined) {
-    chrome.tabs.update(request.tabId, { active: true });
-    chrome.windows.update(request.windowId, { focused: true });
-    sendResponse({ success: true });
-  }
-});
+
