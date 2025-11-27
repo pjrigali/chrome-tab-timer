@@ -73,9 +73,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             let timeStr = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
 
             let domain = '';
-            try { domain = new URL(tab.url).hostname; } 
-            catch(e){ domain = tab.title || 'unknown'; }
-
+            try {
+              domain = new URL(tab.url).hostname.replace(/^www\./, '');
+            } catch (e) {
+              domain = tab.title || 'unknown';
+            }
             formattedTimes[domain] = { time: timeStr, tabId: tab.id, windowId: tab.windowId };
           }
         }
