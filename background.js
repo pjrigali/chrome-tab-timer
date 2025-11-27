@@ -102,6 +102,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
       break;
 
+    case 'copyTabTimes':
+      chrome.tabs.query({}, (tabs) => {
+        let text = '';
+        let csv = 'tabId,windowId,domain,url,createdAtISO,activeSeconds\n';
+
+        for (let tab of tabs) {
+          const data = tabTimes[tab.id];
+          if (!data) continue;
+
+          let domain = '';
+          try {
+            domain = new URL(tab.url).hostname.replace(/^www\./, '');
+          } catch (e) {
+            domain = tab.title || 'unknown';
+          }
+
+          const isoCreated = new Date(data.createdAt || data.startTime).toISOString();
+
+          // Plain text output (single line per tab)
+          text += `${tab.id}, ${tab.windowId}, ${domain}, ${tab.url}, ${isoCreated}, ${data.seconds}\n`;
+
+          // CSV format (clean, no spaces)
+          csv += `${tab.id},${tab.windowId},${domain},"${tab.url}",${isoCreated},${data.seconds}\n`;
+        }
+
+        sendResponse({ text, csv });
+      });
+
+      return true; // async response
+
     default:
       break;
   }

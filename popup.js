@@ -1,5 +1,6 @@
 const tabList = document.getElementById('tabList');
 const copyBtn = document.getElementById('copyBtn');
+const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 
 function updateTabList() {
   chrome.runtime.sendMessage({ action: 'getTabTimes' }, (tabTimes) => {
@@ -43,19 +44,48 @@ function updateTabList() {
   });
 }
 
-// Copy all tab times to clipboard
+
+// ------------------------------------------------------
+// COPY TO CLIPBOARD
+// ------------------------------------------------------
 copyBtn.addEventListener('click', () => {
-  // Get the tab times from background
-  chrome.runtime.sendMessage({ action: 'getTabTimes' }, (tabTimes) => {
-    let text = '';
-    for (let domain in tabTimes) {
-      text += `${domain}: ${tabTimes[domain].time}\n`;
+  chrome.runtime.sendMessage({ action: 'copyTabTimes' }, (response) => {
+    if (!response || !response.text) {
+      console.error("No text returned from background.");
+      return;
     }
 
-    // Copy in the popup context (works reliably)
-    navigator.clipboard.writeText(text).then(() => {
-      alert('Tab times copied to clipboard!');
-    }).catch(err => console.error('Clipboard error:', err));
+    navigator.clipboard.writeText(response.text)
+      .then(() => alert("Tab details copied to clipboard!"))
+      .catch(err => console.error("Clipboard error:", err));
+  });
+});
+
+
+// ------------------------------------------------------
+// DOWNLOAD CSV (NEW)
+// ------------------------------------------------------
+downloadCsvBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'copyTabTimes' }, (response) => {
+    if (!response || !response.csv) {
+      console.error("No CSV returned from background.");
+      return;
+    }
+
+    // Create a downloadable CSV blob
+    const blob = new Blob([response.csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    // Generate temporary download link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tab_times.csv';
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   });
 });
 
